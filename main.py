@@ -25,15 +25,3 @@ slemnish.get_data("DPM")
 slemnish.ew()
 
 clash.QuickPlot({'b4nny': b4nny, 'slemnish': slemnish}, start=R2END, end=R3END)
-
-'''
-fig, ax1 = plt.subplots()
-p1.shade_seasons(ax1)
-ax1.plot(weekly.index, weekly.val, label="yung b4niel")
-ax1.plot(weekly.index, [v-40 for v in weekly.val], label="young man")
-
-ax1.legend()
-
-fig.show()
-
-'''
