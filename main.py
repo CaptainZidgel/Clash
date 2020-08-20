@@ -8,8 +8,6 @@ import matplotlib.pyplot as plt
 IDs1 = spot.GET_IDs('76561197970669109') #b4nny
 IDs2 = spot.GET_IDs('76561198035712034') #slemnish
 
-seasons = spot.tf2seasons.all_seasons
-
 s3inv = clash.load_teams("invite_S3.json")
 ##
 R2END = clash.season_dates['RGL2']['end']
