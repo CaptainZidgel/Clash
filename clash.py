@@ -4,6 +4,17 @@ import json
 import os
 from datetime import datetime
 import matplotlib.pyplot as plt
+import statistics as stats
+
+def z_score(score, data):
+    '''
+    z-score is found by dividing the difference of the mean from a score by the standard deviation of that data
+    Positive z means the score is to the _right_ of the data on a curve, or a higher value compared to the mean.
+    Negative z means the score is to the _left_ of the data on a curve, or a lower value compared to the mean.
+    In other words, a higher absolute value of z indicates further movement from the mean in a direction (+/-),
+      lower means it is close to the mean.
+    '''
+    return (score - stats.mean(data)) / stats.pstdev(data)
 
 def load_teams(file):
     with open(file, 'r') as f:
@@ -64,7 +75,11 @@ class Player:
         approver.Custom(lambda l: is_scrim(l, team_list))
         approver.Finalize()
         self.data = []
+        self.key_logs()
 
+    def key_logs(self):
+        self.keyed_logs = {v["id"]: v for v in self.logs}
+        
     def get_data(self, stat):
         self.data = self.plotter.get_timestamped_values(getattr(self.e, stat))
         return self.data
@@ -72,23 +87,32 @@ class Player:
     def ew(self):
         self.data = self.data.expanding(5).mean()
 
+    def std_score(self, log, STAT):
+        '''
+        Get the standard score (z-score) for STAT from log.
+        z-score is a way of standardizing data to see how it differs from the data's mean, which can be useful for comparing
+        two peoples' individual performances against their own past performances.
+        '''
+        stat = getattr(self.e, STAT)
+        return z_score(stat(self.keyed_logs[str(log)]), self.e.Stat_List(stat, self.logs))
+
 
 class QuickPlot:
     def __init__(self, players, start, end):
         if not type(players) == dict:
             raise Exception("players must be a dict of Player objects, keyed with a username")
-        fig, ax1 = plt.subplots()
+        self.fig, self.ax1 = plt.subplots()
         for name, player in players.items():
             if len(player.data) == 0:
                 raise Exception("Missing data. Did you call Player.get_data()?")
             try:
-                ax1.plot(player.data.index, player.data.val, label=name)
+                self.ax1.plot(player.data.index, player.data.val, label=name)
             except AttributeError:
-                ax1.plot(player.data.index, player.data.values, label=name)
+                self.ax1.plot(player.data.index, player.data.values, label=name)
             for lab, s in season_dates.items():
                 if start <= s['start'] <= end or start <= s['end'] <= end:
-                    ax1.axvspan(s['start'], s['end'], alpha=0.1, color="gray")
-                    ax1.text(s['start'], ax1.get_ylim()[0], lab, rotation=90, fontsize='small')
-            player.plotter.set_xbounds(ax1, (None, None))
-        ax1.legend()
-        fig.show()
+                    self.ax1.axvspan(s['start'], s['end'], alpha=0.1, color="gray")
+                    self.ax1.text(s['start'], self.ax1.get_ylim()[0], lab, rotation=90, fontsize='small')
+            player.plotter.set_xbounds(self.ax1, (None, None))
+        self.ax1.legend()
+        self.fig.show()
